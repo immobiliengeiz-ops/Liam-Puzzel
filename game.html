@@ -17,12 +17,17 @@
           <button id="newRound" type="button">Neue Runde</button>
           <button id="toggleAudio" type="button" aria-pressed="false">Play</button>
           <button id="nextTrack" type="button" title="Nächster Track (N)">Next</button>
+
+          <!-- Neu -->
+          <button id="galleryBtn" type="button" title="Galerie">🖼</button>
+          <button id="compactBtn" type="button" title="Kompaktmodus">Kompakt</button>
+
           <input id="volume" type="range" min="0" max="1" step="0.01" value="0.55" aria-label="Lautstärke"/>
         </div>
       </div>
     </header>
 
-    <div class="cardish" style="padding:10px 12px;">
+    <div class="cardish hud" id="hud" style="padding:10px 12px;">
       <div class="pills" style="justify-content:space-between;">
         <span class="pill">Versuche: <span id="tries">0</span></span>
         <span class="pill">Paare: <span id="matches">0</span>/16</span>
@@ -31,7 +36,6 @@
       </div>
       <div class="small" id="help" style="margin-top:6px;">
         <b>Shortcuts:</b> Pause <kbd>P</kbd>, Next <kbd>N</kbd>, Musik Play/Stop <kbd>M</kbd>.
-        Shuffle passiert nur nach dem 5. und 10. Paar (2 Sekunden) – Karten bleiben dabei geschlossen.
       </div>
     </div>
 
@@ -43,7 +47,7 @@
         </div>
         <div id="grid" class="grid" aria-label="Memory Grid"></div>
         <div class="small" style="margin-top:10px;">
-          Regeln: Zwei gleiche Teile finden. Bei Treffer fliegen sie ins Bild. Nicht gematchte Karten schließen nach jedem Versuch wieder.
+          Zwei gleiche Teile finden. Treffer fliegen ins Bild. Fehlversuche klappen zurück.
         </div>
       </section>
 
@@ -56,12 +60,12 @@
           <div id="solution" class="solution" aria-label="Solution Grid"></div>
         </div>
         <div class="small" style="margin-top:10px;">
-          Der Hintergrund wird pro Paar schärfer. Bei Gewinn bekommst du eine Galerie-Ansicht (bleibt so lange, wie du willst).
+          Mit jedem Paar wird das Foto klarer. Am Ende bleibt es offen – so lange du willst.
         </div>
       </section>
     </div>
 
-    <div class="cardish" style="padding:10px 12px;">
+    <div class="cardish setup" id="setup" style="padding:10px 12px;">
       <div class="small">
         <b>Setup:</b> Fotos in <code>assets/photos/photo01…photo20</code> (jpg/png/webp). Musik in <code>assets/music/track01…track06</code> (mp3/m4a/ogg).
       </div>
@@ -92,7 +96,7 @@
   <div id="winOverlay" class="overlay" aria-hidden="true">
     <div class="modal">
       <div class="modalHead">
-        <div class="title">Belohnung</div>
+        <div class="title">Fertig</div>
         <button id="closeWin" type="button">Schließen</button>
       </div>
       <hr class="sep"/>
@@ -107,11 +111,37 @@
           <span class="pill">Zeit: <span id="winTime">00:00</span></span>
         </div>
         <div class="small">
-          Du kannst dir das Foto so lange anschauen, wie du willst. Erst wenn du „Neue Runde“ klickst, geht’s weiter.
+          Das Foto bleibt hier offen. Wenn du weitermachen willst: „Neue Runde“.
         </div>
         <div class="modalActions">
           <button id="winToStart" type="button">Startseite</button>
           <button id="winNewRound" type="button" class="primary">Neue Runde</button>
+          <button id="winOpenGallery" type="button">Galerie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Galerie overlay (neu) -->
+  <div id="galleryOverlay" class="overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="title">Galerie</div>
+        <button id="galleryClose" type="button">Schließen</button>
+      </div>
+      <hr class="sep"/>
+      <div class="modalBody">
+        <div class="small" id="galleryEmpty" style="display:none;">
+          Noch keine Fotos freigespielt.
+        </div>
+
+        <div id="galleryGrid" class="galleryGrid" aria-label="Freigespielte Fotos"></div>
+
+        <div id="galleryViewer" class="galleryViewer" style="display:none;">
+          <div class="galleryViewerTop">
+            <button id="viewerBack" type="button">Zurück</button>
+          </div>
+          <div id="viewerImg" class="galleryViewerImg" aria-label="Foto Ansicht"></div>
         </div>
       </div>
     </div>

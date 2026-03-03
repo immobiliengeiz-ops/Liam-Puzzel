@@ -442,3 +442,55 @@ kbd{
   .bgimg{ transition: none !important; }
   .tile, .flying{ animation: none !important; transition: none !important; }
 }
+
+
+/* ===== Galerie ===== */
+.galleryGrid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 920px){
+  .galleryGrid{ grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 520px){
+  .galleryGrid{ grid-template-columns: repeat(2, 1fr); }
+}
+.gThumb{
+  width:100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow:hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  background-size: cover;
+  background-position: center;
+  cursor:pointer;
+}
+.gThumb:hover{ filter: brightness(1.04); }
+.galleryViewer{
+  margin-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  padding-top: 12px;
+}
+.galleryViewerTop{
+  display:flex;
+  justify-content:flex-start;
+  margin-bottom: 10px;
+}
+.galleryViewerImg{
+  width:100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.20);
+  background-size: cover;
+  background-position: center;
+}
+
+/* ===== Kompaktmodus ===== */
+body.compact .wrap{ padding: 12px; gap: 10px; }
+body.compact .hud{ padding: 8px 10px !important; }
+body.compact .hud .small{ display:none; } /* Hide shortcut line */
+body.compact .setup{ display:none; }      /* Hide setup card for more space */
+body.compact h1{ font-size: 16px; }

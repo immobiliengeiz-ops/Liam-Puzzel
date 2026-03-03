@@ -85,6 +85,111 @@
   function hideToast(){ toast.classList.remove("show"); }
   toastClose?.addEventListener("click", hideToast);
 
+  // ====== Persistence (Deck + Galerie + UI) ======
+  const LS = {
+    deck: "mp_deck_v1",
+    deckIndex: "mp_deck_i_v1",
+    currentPhoto: "mp_current_photo_v1",
+    solved: "mp_solved_photos_v1",
+    compact: "mp_compact_v1",
+  };
+
+  const readJSON = (k, fallback) => {
+    try{
+      const raw = localStorage.getItem(k);
+      if(!raw) return fallback;
+      return JSON.parse(raw);
+    }catch(_){ return fallback; }
+  };
+  const writeJSON = (k, v) => {
+    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){}
+  };
+
+  const readStr = (k, fallback="") => {
+    try{ return localStorage.getItem(k) ?? fallback; }catch(_){ return fallback; }
+  };
+  const writeStr = (k, v) => {
+    try{ localStorage.setItem(k, v); }catch(_){}
+  };
+  const readBool = (k, fallback=false) => {
+    const v = readStr(k, "");
+    if(v === "") return fallback;
+    return v === "1";
+  };
+  const writeBool = (k, v) => writeStr(k, v ? "1" : "0");
+
+  function shuffleCopy(arr){
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  // Deck state (keine Wiederholung, bis alle dran waren)
+  function ensureDeck(available){
+    const storedDeck = readJSON(LS.deck, null);
+    let deck = Array.isArray(storedDeck) ? storedDeck : null;
+
+    // Wenn sich die verfügbaren Fotos geändert haben, Deck neu aufsetzen
+    const availSet = new Set(available);
+    const deckValid = deck && deck.length > 0 && deck.every(x => availSet.has(x));
+
+    if(!deckValid || deck.length !== available.length){
+      deck = shuffleCopy(available);
+      writeJSON(LS.deck, deck);
+      writeJSON(LS.deckIndex, 0);
+      // currentPhoto behalten wir NICHT zwingend – sonst könnte ein altes Foto "kleben"
+      // aber wir lassen es stehen, wenn es noch verfügbar ist (siehe restoreCurrentPhoto)
+    }
+    return deck;
+  }
+
+  function restoreCurrentPhoto(available){
+    const cur = readStr(LS.currentPhoto, "");
+    if(cur && available.includes(cur)) return cur;
+    return "";
+  }
+
+  function nextPhotoFromDeck(available){
+    const deck = ensureDeck(available);
+    let i = readJSON(LS.deckIndex, 0);
+    if(typeof i !== "number" || i < 0) i = 0;
+
+    // am Ende: neu mischen
+    if(i >= deck.length){
+      const newDeck = shuffleCopy(available);
+      writeJSON(LS.deck, newDeck);
+      i = 0;
+    }
+
+    const pick = readJSON(LS.deck, deck)[i];
+    writeJSON(LS.deckIndex, i + 1);
+    writeStr(LS.currentPhoto, pick);
+    return pick;
+  }
+
+  function markSolved(photoSrc){
+    if(!photoSrc) return;
+    const solved = readJSON(LS.solved, []);
+    if(Array.isArray(solved) && !solved.includes(photoSrc)){
+      solved.push(photoSrc);
+      writeJSON(LS.solved, solved);
+    }
+  }
+
+  function getSolved(){
+    const solved = readJSON(LS.solved, []);
+    return Array.isArray(solved) ? solved : [];
+  }
+
+  // Kompaktmodus state
+  function applyCompact(){
+    const on = readBool(LS.compact, false);
+    document.body.classList.toggle("compact", on);
+  }
+
   // ====== Phase / Locking ======
   const Phase = Object.freeze({
     BUILDING: "BUILDING",
@@ -324,23 +429,46 @@
       </svg>`
     );
   }
+  async function displayUrlFromSrc(src){
+    const { url, revoke } = await downscaleToObjectUrl(src);
+    if(currentPhotoRevoke){ try{ currentPhotoRevoke(); }catch(_){} }
+    currentPhotoRevoke = revoke;
+    return url;
+  }
 
   async function pickRandomPhotoUrl(){
     if(photoPool === null) await buildPhotoPool();
     if(photoPool && photoPool.length > 0){
       const src = photoPool[Math.floor(Math.random() * photoPool.length)];
-      const { url, revoke } = await downscaleToObjectUrl(src);
-      if(currentPhotoRevoke){
-        try{ currentPhotoRevoke(); }catch(_){}
-      }
-      currentPhotoRevoke = revoke;
-      return url;
+      return await displayUrlFromSrc(src);
     }
     if(currentPhotoRevoke){
       try{ currentPhotoRevoke(); }catch(_){}
       currentPhotoRevoke = null;
     }
     return placeholderSvg();
+  }
+
+  async function pickPhotoForRound({ restore=false } = {}){
+    if(photoPool === null) await buildPhotoPool();
+    const available = (photoPool && photoPool.length) ? photoPool : [];
+    // Restore current photo on refresh
+    if(restore){
+      const cur = restoreCurrentPhoto(available);
+      if(cur){
+        photoSrc = cur;
+        return await displayUrlFromSrc(cur);
+      }
+    }
+    // Normal: next from deck (no repeats until deck ends)
+    if(available.length){
+      const src = nextPhotoFromDeck(available);
+      photoSrc = src;
+      return await displayUrlFromSrc(src);
+    }
+    // fallback
+    photoSrc = "";
+    return await pickRandomPhotoUrl();
   }
 
   // ====== Audio playlist (ducking + iOS safe) ======
@@ -542,6 +670,7 @@
   let tries = 0;
   let matches = 0;
   let photoUrl = "";
+  let photoSrc = ""; // source asset url (für Deck/Galerie)
 
   function updateStats(){
     triesEl.textContent = String(tries);
@@ -779,6 +908,9 @@
     setPhase(Phase.WON);
     stopTimer();
 
+    // in Galerie aufnehmen (nur komplett gelöste Fotos)
+    markSolved(photoSrc);
+
     winImg.style.backgroundImage = `url('${photoUrl}')`;
     winTries.textContent = String(tries);
     winTime.textContent = timeEl.textContent;
@@ -907,6 +1039,79 @@
   winToStart.addEventListener("click", () => { window.location.href = "index.html"; });
   winNewRound.addEventListener("click", () => buildNewRound());
 
+  // ===== Galerie UI =====
+  const galleryBtn = el("galleryBtn");
+  const winOpenGallery = el("winOpenGallery");
+  const galleryOverlay = el("galleryOverlay");
+  const galleryClose = el("galleryClose");
+  const galleryGrid = el("galleryGrid");
+  const galleryEmpty = el("galleryEmpty");
+  const galleryViewer = el("galleryViewer");
+  const viewerImg = el("viewerImg");
+  const viewerBack = el("viewerBack");
+
+  function showGallery(show){
+    if(!galleryOverlay) return;
+    galleryOverlay.classList.toggle("show", !!show);
+    galleryOverlay.setAttribute("aria-hidden", String(!show));
+    if(show) renderGallery();
+    if(!show) closeViewer();
+  }
+
+  function openViewer(src){
+    if(!galleryViewer || !viewerImg) return;
+    galleryViewer.style.display = "block";
+    if(galleryGrid) galleryGrid.style.display = "none";
+    if(galleryEmpty) galleryEmpty.style.display = "none";
+    viewerImg.style.backgroundImage = `url('${src}')`;
+  }
+
+  function closeViewer(){
+    if(!galleryViewer) return;
+    galleryViewer.style.display = "none";
+    if(galleryGrid) galleryGrid.style.display = "";
+    // Empty state handled by renderGallery()
+  }
+
+  function renderGallery(){
+    const solved = getSolved();
+    if(!galleryGrid || !galleryEmpty) return;
+
+    galleryGrid.innerHTML = "";
+    if(solved.length === 0){
+      galleryEmpty.style.display = "block";
+      galleryGrid.style.display = "none";
+      closeViewer();
+      return;
+    }
+    galleryEmpty.style.display = "none";
+    galleryGrid.style.display = "grid";
+
+    for(const src of solved){
+      const t = document.createElement("div");
+      t.className = "gThumb";
+      t.style.backgroundImage = `url('${src}')`;
+      t.title = "Öffnen";
+      t.addEventListener("click", () => openViewer(src));
+      galleryGrid.appendChild(t);
+    }
+  }
+
+  galleryBtn?.addEventListener("click", () => showGallery(true));
+  winOpenGallery?.addEventListener("click", () => showGallery(true));
+  galleryClose?.addEventListener("click", () => showGallery(false));
+  galleryOverlay?.addEventListener("click", (e) => { if(e.target === galleryOverlay) showGallery(false); });
+  viewerBack?.addEventListener("click", () => { closeViewer(); renderGallery(); });
+
+  // ===== Kompaktmodus =====
+  const compactBtn = el("compactBtn");
+  function toggleCompact(){
+    const on = !readBool(LS.compact, false);
+    writeBool(LS.compact, on);
+    applyCompact();
+  }
+  compactBtn?.addEventListener("click", toggleCompact);
+
   pauseOverlay.addEventListener("click", (e) => {
     if(e.target === pauseOverlay) setPaused(false);
   });
@@ -919,6 +1124,8 @@
     if(e.key === "Escape"){
       if(pauseOverlay.classList.contains("show")) setPaused(false);
       if(winOverlay.classList.contains("show")) showOverlay(winOverlay, false);
+      const g = document.getElementById("galleryOverlay");
+      if(g && g.classList.contains("show")) g.classList.remove("show");
       return;
     }
     if(e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
@@ -938,7 +1145,7 @@
   });
 
   // ====== Build round ======
-  async function buildNewRound(){
+  async function buildNewRound(options = { restore:false }){
     setPhase(Phase.BUILDING);
     showOverlay(winOverlay, false);
     showOverlay(pauseOverlay, false);
@@ -948,7 +1155,7 @@
     matches = 0;
     updateStats();
 
-    photoUrl = await pickRandomPhotoUrl();
+    photoUrl = await pickPhotoForRound({ restore: !!options.restore });
     bgimg.style.backgroundImage = `url('${photoUrl}')`;
 
     applyBlur();
@@ -973,7 +1180,8 @@
   }
 
   setGridTemplates();
-  buildNewRound();
+  applyCompact();
+  buildNewRound({ restore:true });
 
   newRoundBtn.addEventListener("click", () => {
     if(phase === Phase.READY || phase === Phase.TWO_OPEN || phase === Phase.WON){
