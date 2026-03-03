@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Memory-Puzzle – Spiel</title>
+  <link rel="stylesheet" href="assets/app.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Memory-Puzzle</h1>
+      <div class="controls">
+        <div class="controlGroup cardish">
+          <a href="index.html"><button type="button">Startseite</button></a>
+          <button id="pauseBtn" type="button">Pause</button>
+          <button id="newRound" type="button">Neue Runde</button>
+          <button id="toggleAudio" type="button" aria-pressed="false">Play</button>
+          <button id="nextTrack" type="button" title="Nächster Track (N)">Next</button>
+          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.55" aria-label="Lautstärke"/>
+        </div>
+      </div>
+    </header>
+
+    <div class="cardish" style="padding:10px 12px;">
+      <div class="pills" style="justify-content:space-between;">
+        <span class="pill">Versuche: <span id="tries">0</span></span>
+        <span class="pill">Paare: <span id="matches">0</span>/16</span>
+        <span class="pill">Zeit: <span id="time">00:00</span></span>
+        <span class="pill">Track: <span id="trackName">—</span></span>
+      </div>
+      <div class="small" id="help" style="margin-top:6px;">
+        <b>Shortcuts:</b> Pause <kbd>P</kbd>, Next <kbd>N</kbd>, Musik Play/Stop <kbd>M</kbd>.
+        Shuffle passiert nur nach dem 5. und 10. Paar (2 Sekunden) – Karten bleiben dabei geschlossen.
+      </div>
+    </div>
+
+    <div class="boards">
+      <section class="board cardish" id="memoryBoard">
+        <h2>Memory-Feld (32 Karten)</h2>
+        <div id="shuffleBanner" class="shuffleBanner" role="status" aria-live="polite">
+          <span class="dot"></span> Mischen…
+        </div>
+        <div id="grid" class="grid" aria-label="Memory Grid"></div>
+        <div class="small" style="margin-top:10px;">
+          Regeln: Zwei gleiche Teile finden. Bei Treffer fliegen sie ins Bild. Nicht gematchte Karten schließen nach jedem Versuch wieder.
+        </div>
+      </section>
+
+      <section class="board cardish">
+        <h2>Bild (unscharf → scharf)</h2>
+        <div class="stage" id="stage">
+          <div class="bgimg" id="bgimg"></div>
+          <div class="noise"></div>
+          <div class="vignette"></div>
+          <div id="solution" class="solution" aria-label="Solution Grid"></div>
+        </div>
+        <div class="small" style="margin-top:10px;">
+          Der Hintergrund wird pro Paar schärfer. Bei Gewinn bekommst du eine Galerie-Ansicht (bleibt so lange, wie du willst).
+        </div>
+      </section>
+    </div>
+
+    <div class="cardish" style="padding:10px 12px;">
+      <div class="small">
+        <b>Setup:</b> Fotos in <code>assets/photos/photo01…photo20</code> (jpg/png/webp). Musik in <code>assets/music/track01…track06</code> (mp3/m4a/ogg).
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause overlay -->
+  <div id="pauseOverlay" class="overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="title">Pause</div>
+        <button id="resumeBtn" type="button" class="primary">Weiter</button>
+      </div>
+      <hr class="sep"/>
+      <div class="modalBody">
+        <div class="small">
+          Kurzer Break. Musik wird leicht gedimmt. Tipp: <kbd>P</kbd> zum Fortsetzen.
+        </div>
+        <div class="modalActions">
+          <button id="pauseToStart" type="button">Zur Startseite</button>
+          <button id="pauseNewRound" type="button">Neue Runde</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win/Gallery overlay -->
+  <div id="winOverlay" class="overlay" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="title">Belohnung</div>
+        <button id="closeWin" type="button">Schließen</button>
+      </div>
+      <hr class="sep"/>
+      <div class="modalBody">
+        <div class="gallery">
+          <div class="galleryImg" id="winImg"></div>
+          <div class="galleryGlow"></div>
+          <canvas class="confetti" id="confetti" width="1200" height="800"></canvas>
+        </div>
+        <div class="pills">
+          <span class="pill">Versuche: <span id="winTries">0</span></span>
+          <span class="pill">Zeit: <span id="winTime">00:00</span></span>
+        </div>
+        <div class="small">
+          Du kannst dir das Foto so lange anschauen, wie du willst. Erst wenn du „Neue Runde“ klickst, geht’s weiter.
+        </div>
+        <div class="modalActions">
+          <button id="winToStart" type="button">Startseite</button>
+          <button id="winNewRound" type="button" class="primary">Neue Runde</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <div class="msg" id="toastMsg"></div>
+    <button id="toastClose" type="button">OK</button>
+  </div>
+
+  <script src="assets/game.js"></script>
+</body>
+</html>

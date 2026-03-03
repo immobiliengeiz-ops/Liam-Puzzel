@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Memory-Puzzle – Start</title>
+  <link rel="stylesheet" href="assets/app.css"/>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Memory-Puzzle</h1>
+      <div class="pills">
+        <span class="pill">4×4 · 32 Karten</span>
+        <span class="pill">Shuffle bei 5 & 10</span>
+        <span class="pill">Mobile-first</span>
+      </div>
+    </header>
+
+    <section class="cardish hero">
+      <div class="heroTitle">Atmosphäre, Flow, Belohnung.</div>
+      <div class="heroSub">
+        Zwei Karten aufdecken → Match → Teile fliegen ins Bild. Das Foto liegt darunter unscharf und wird mit jedem Paar schärfer.
+        Nach dem 5. und 10. Paar wird das Feld 2 Sekunden „durchgewirbelt“. Am Ende bekommst du eine Galerie-Ansicht – so lange du willst.
+      </div>
+      <div class="pills">
+        <span class="pill">Pause <kbd>P</kbd></span>
+        <span class="pill">Next Track <kbd>N</kbd></span>
+        <span class="pill">Play/Stop <kbd>M</kbd></span>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+        <a href="game.html"><button class="primary" type="button">Spiel starten</button></a>
+        <a href="game.html#help"><button type="button">Setup / Hilfe</button></a>
+      </div>
+    </section>
+
+    <section class="heroGrid">
+      <div class="cardish feature">
+        <h2>Fotos & Musik hinzufügen</h2>
+        <div class="small">
+          <div><b>Fotos:</b> Lege 20 Bilder in <code>assets/photos/</code> ab und benenne sie <code>photo01.jpg</code> … <code>photo20.jpg</code> (png/webp geht auch).</div>
+          <div style="margin-top:8px;"><b>Musik:</b> Lege 6 Tracks in <code>assets/music/</code> ab und benenne sie <code>track01.mp3</code> … <code>track06.mp3</code> (m4a/ogg geht auch).</div>
+          <div style="margin-top:8px;"><b>Performance:</b> Fotos werden im Browser automatisch auf max. <b>2000px</b> skaliert (smooth auf Mobile).</div>
+        </div>
+      </div>
+      <div class="cardish feature">
+        <h2>Teilen (GitHub Pages)</h2>
+        <div class="small">
+          Repo erstellen → Dateien hochladen → Settings → Pages → Branch <code>main</code> / Folder <code>/ (root)</code>.
+          Dann bekommst du einen Link zum Weitergeben.
+          <div style="margin-top:8px;">Hinweis: GitHub Pages ist statisch – ohne „echten“ Passwortschutz.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cardish feature">
+      <h2>Wenn noch keine Assets da sind</h2>
+      <div class="small">
+        Das Spiel startet mit einem Platzhalterbild und zeigt dir Hinweise. Sobald du Fotos/Musik einfügst, läuft alles automatisch.
+      </div>
+    </section>
+  </div>
+</body>
+</html>
